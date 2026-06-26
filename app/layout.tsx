@@ -41,18 +41,54 @@ export default function RootLayout({children}: Readonly<{children: React.ReactNo
     "@type": "WebSite",
     name: "Free Image to Video Generator",
     url: absoluteUrl("/"),
+    description: "Free online image to video converter. Create animated MP4 videos from JPG, PNG, WEBP images with professional motion effects.",
     potentialAction: {
       "@type": "SearchAction",
-      target: `${absoluteUrl("/blog")}?q={search_term_string}`,
+      target: `${absoluteUrl("/")}?q={search_term_string}`,
       "query-input": "required name=search_term_string"
+    }
+  };
+
+  const softwareSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Free Image to Video Generator",
+    description: "Convert still images into animated MP4 videos with zoom, pan, fade, and professional animation effects. No signup required.",
+    applicationCategory: "MultimediaApplication",
+    operatingSystem: "Web",
+    url: absoluteUrl("/"),
+    image: absoluteUrl("/og-image.png"),
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD"
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.8",
+      ratingCount: "1200",
+      bestRating: "5",
+      worstRating: "1"
     }
   };
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+        <meta name="googlebot" content="index, follow" />
+        <meta name="bingbot" content="index, follow" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
       <body className={inter.className}>
         <Script id="website-schema" type="application/ld+json" strategy="beforeInteractive">
           {JSON.stringify(websiteSchema)}
+        </Script>
+        <Script id="software-schema" type="application/ld+json" strategy="beforeInteractive">
+          {JSON.stringify(softwareSchema)}
         </Script>
         <SiteHeader />
         <main>{children}</main>

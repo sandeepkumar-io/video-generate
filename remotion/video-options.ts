@@ -9,10 +9,20 @@ export const animationPresets = [
   "pan-down",
   "rotate-slow",
   "fade-in",
+  "fade-out",
+  "slide-left",
+  "slide-right",
+  "slide-up",
+  "slide-down",
+  "tilt-left",
+  "tilt-right",
+  "tilt-up",
+  "pulse-zoom",
+  "elegant-pan",
   "ken-burns"
 ] as const;
 
-export const durations = [3, 5, 10] as const;
+export const durations = [2, 3, 5, 10] as const;
 export const resolutions = ["720p", "1080p"] as const;
 export const aspectRatios = ["16:9", "9:16", "1:1"] as const;
 
@@ -22,7 +32,7 @@ export type ResolutionOption = (typeof resolutions)[number];
 export type AspectRatioOption = (typeof aspectRatios)[number];
 
 export type ImageVideoProps = {
-  imageSrc: string;
+  imageSrcs: string[];
   animation: AnimationPreset;
   duration: DurationOption;
   resolution: ResolutionOption;
@@ -30,7 +40,7 @@ export type ImageVideoProps = {
 };
 
 export const defaultImageVideoProps: ImageVideoProps = {
-  imageSrc: "",
+  imageSrcs: [],
   animation: "ken-burns",
   duration: 5,
   resolution: "720p",

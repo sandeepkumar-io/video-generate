@@ -2,8 +2,6 @@ import {randomUUID} from "node:crypto";
 import {readFile, unlink} from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import {bundle} from "@remotion/bundler";
-import {renderMedia, selectComposition} from "@remotion/renderer";
 import {
   animationPresets,
   aspectRatios,
@@ -18,11 +16,16 @@ export const maxDuration = 120;
 
 let bundlePromise: Promise<string> | null = null;
 
-function getBundle() {
-  bundlePromise ??= bundle({
-    entryPoint: path.join(process.cwd(), "remotion", "index.ts"),
-    webpackOverride: (config) => config
-  });
+async function getBundle() {
+  if (bundlePromise) return bundlePromise;
+
+  bundlePromise = (async () => {
+    const {bundle} = await import("@remotion/bundler");
+    return bundle({
+      entryPoint: path.join(process.cwd(), "remotion", "index.ts"),
+      webpackOverride: (config) => config
+    });
+  })();
 
   return bundlePromise;
 }
@@ -32,38 +35,64 @@ function parsePayload(payload: unknown): ImageVideoProps {
     throw new Error("Invalid render payload.");
   }
 
-  const candidate = payload as Partial<ImageVideoProps>;
+  const candidate = payload as Record<string, unknown>;
+  const images = candidate.images;
 
-  if (typeof candidate.imageSrc !== "string" || !candidate.imageSrc.startsWith("data:image/")) {
-    throw new Error("Upload a valid image before rendering.");
+  if (!Array.isArray(images) || images.length === 0) {
+    throw new Error("Upload at least one image before rendering.");
   }
 
-  if (!animationPresets.includes(candidate.animation as ImageVideoProps["animation"])) {
+  const imageSrcs = images.map((img: Record<string, unknown>) => img.src as string);
+
+  for (const src of imageSrcs) {
+    if (typeof src !== "string" || !src.startsWith("data:image/")) {
+      throw new Error("Upload valid images before rendering.");
+    }
+  }
+
+  const animation = candidate.animation as string;
+  const duration = candidate.duration as number;
+  const resolution = candidate.resolution as string;
+  const aspectRatio = candidate.aspectRatio as string;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!animationPresets.includes(animation as any)) {
     throw new Error("Choose a valid animation preset.");
   }
 
-  if (!durations.includes(candidate.duration as ImageVideoProps["duration"])) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!durations.includes(duration as any)) {
     throw new Error("Choose a valid duration.");
   }
 
-  if (!resolutions.includes(candidate.resolution as ImageVideoProps["resolution"])) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!resolutions.includes(resolution as any)) {
     throw new Error("Choose a valid resolution.");
   }
 
-  if (!aspectRatios.includes(candidate.aspectRatio as ImageVideoProps["aspectRatio"])) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (!aspectRatios.includes(aspectRatio as any)) {
     throw new Error("Choose a valid aspect ratio.");
   }
 
-  return candidate as ImageVideoProps;
+  return {
+    imageSrcs,
+    animation: animation as never,
+    duration: duration as never,
+    resolution: resolution as never,
+    aspectRatio: aspectRatio as never
+  };
 }
 
 export async function POST(request: Request) {
   let outputLocation: string | null = null;
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const renderer = (await import("@remotion/renderer")) as any;
     const inputProps = parsePayload(await request.json());
     const serveUrl = await getBundle();
-    const composition = await selectComposition({
+    const composition = await renderer.selectComposition({
       serveUrl,
       id: "ImageVideo",
       inputProps
@@ -71,15 +100,19 @@ export async function POST(request: Request) {
 
     outputLocation = path.join(os.tmpdir(), `image-video-${randomUUID()}.mp4`);
 
-    await renderMedia({
+    const chromiumOptions = process.env.REMOTION_CHROMIUM_EXECUTABLE
+      ? {executablePath: process.env.REMOTION_CHROMIUM_EXECUTABLE}
+      : undefined;
+
+    await renderer.renderMedia({
       composition,
       serveUrl,
       codec: "h264",
       outputLocation,
       inputProps,
-      chromiumOptions: process.env.REMOTION_CHROMIUM_EXECUTABLE
-        ? {executablePath: process.env.REMOTION_CHROMIUM_EXECUTABLE}
-        : undefined
+      crf: 26,
+      pixelFormat: "yuv420p",
+      chromiumOptions
     });
 
     const videoBuffer = await readFile(outputLocation);

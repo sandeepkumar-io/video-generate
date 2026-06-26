@@ -27,6 +27,14 @@ export function FeatureBand() {
   return (
     <section className="py-16">
       <div className="container">
+        <div className="mb-12 max-w-3xl">
+          <h2 className="text-3xl font-bold tracking-normal sm:text-4xl">
+            Why choose our free image to video converter?
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Create professional animated videos without limitations, subscriptions, or hidden fees. Perfect for social media, marketing, and presentations.
+          </p>
+        </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {features.map((feature) => {
             const Icon = feature.icon;

@@ -6,14 +6,20 @@ import {blogPosts} from "@/lib/blog";
 import {absoluteUrl} from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Blog",
-  description: "Guides for turning photos into videos, choosing animation effects, and creating social-ready MP4s.",
+  title: "Image to Video Blog - Guides, Tips & Tutorials | Free Video Generator",
+  description: "Learn how to convert photos to videos, choose the best animation effects, and create social-media-ready MP4s. Expert guides on video creation.",
+  keywords: ["image to video guide", "animation tutorial", "video creation tips", "photo animation", "MP4 converter guide"],
   alternates: {canonical: absoluteUrl("/blog")},
   openGraph: {
-    title: "Blog | Free Image to Video Generator",
-    description: "Practical image-to-video guides and animation tips.",
+    title: "Image to Video Blog - Guides & Tutorials",
+    description: "Practical guides on converting photos into animated videos, choosing motion effects, and exporting social-ready MP4 files.",
     url: absoluteUrl("/blog"),
     type: "website"
+  },
+  twitter: {
+    card: "summary",
+    title: "Image to Video Blog",
+    description: "Learn image to video conversion, animation tips, and best practices"
   }
 };
 

@@ -2,18 +2,24 @@ import {AbsoluteFill, Img, useCurrentFrame, useVideoConfig} from "remotion";
 import {getImageStyle} from "./animation";
 import type {ImageVideoProps} from "./video-options";
 
-export function ImageVideo({imageSrc, animation}: ImageVideoProps) {
+export function ImageVideo({imageSrcs, animation}: ImageVideoProps) {
   const frame = useCurrentFrame();
-  const {durationInFrames} = useVideoConfig();
-  const imageStyle = getImageStyle(animation, frame, durationInFrames);
+  const {durationInFrames, fps} = useVideoConfig();
+
+  const imageDurationFrames = durationInFrames / imageSrcs.length;
+  const currentImageIndex = Math.floor(frame / imageDurationFrames);
+  const frameInImage = frame % imageDurationFrames;
+
+  const currentImageSrc = imageSrcs[currentImageIndex];
+  const imageStyle = getImageStyle(animation, frameInImage, imageDurationFrames);
 
   return (
     <AbsoluteFill style={{backgroundColor: "#020617", overflow: "hidden"}}>
-      {imageSrc ? (
-        <Img src={imageSrc} style={imageStyle} />
+      {currentImageSrc ? (
+        <Img src={currentImageSrc} style={imageStyle} />
       ) : (
         <AbsoluteFill style={{alignItems: "center", justifyContent: "center", color: "white", fontFamily: "sans-serif"}}>
-          Upload an image
+          Upload images
         </AbsoluteFill>
       )}
     </AbsoluteFill>

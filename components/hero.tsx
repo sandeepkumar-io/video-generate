@@ -14,12 +14,10 @@ export function Hero() {
             No AI models, no GPU queue
           </Badge>
           <h1 className="text-balance text-4xl font-bold tracking-normal sm:text-5xl lg:text-6xl">
-            Free Image to Video Generator
+            Convert Images to Animated Videos Instantly
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
-            Upload a JPG, PNG, or WEBP image and turn it into a short animated MP4 with zoom, pan, rotate, fade, and
-            Ken Burns effects. Preview the motion instantly, then export a video ready for social posts, websites, or
-            presentations.
+            Transform your JPG, PNG, or WEBP photos into professional animated MP4 videos with 19+ stunning motion effects. Create zoom, pan, slide, tilt, fade, and Ken Burns animations in seconds. No signup, no AI, no GPU required — preview instantly and download ready-to-use videos.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button size="lg" asChild>
@@ -51,16 +49,16 @@ export function Hero() {
             </div>
             <div className="grid grid-cols-3 border-t text-center text-sm">
               <div className="p-4">
-                <p className="font-semibold">9 effects</p>
-                <p className="text-muted-foreground">Motion presets</p>
+                <p className="font-semibold">19+ effects</p>
+                <p className="text-muted-foreground">Smooth animations</p>
               </div>
               <div className="border-x p-4">
-                <p className="font-semibold">MP4</p>
+                <p className="font-semibold">MP4 / 30fps</p>
                 <p className="text-muted-foreground">Download</p>
               </div>
               <div className="p-4">
-                <p className="font-semibold">1080p</p>
-                <p className="text-muted-foreground">Export</p>
+                <p className="font-semibold">720p - 1080p</p>
+                <p className="text-muted-foreground">Quality export</p>
               </div>
             </div>
           </div>

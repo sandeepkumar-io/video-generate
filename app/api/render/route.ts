@@ -37,72 +37,7 @@ function getVideoDimensions(resolution: string, aspectRatio: string) {
 }
 
 
-function getAnimationFilter(animation: string, width: number, height: number, duration: number, fps: number = 30): string {
-  // Use zoompan filter for smooth animations
-  // zoompan: z=zoom_factor:d=duration_in_frames:x=x_coord:y=y_coord
-  const frames = Math.ceil(fps * duration);
-
-  switch (animation) {
-    case "zoom-in":
-      // Zoom in effect - zooms from 1.0 to 1.3
-      return `zoompan=z=1.3:d=${frames}:x=iw/2-(iw/zoom/2):y=ih/2-(ih/zoom/2):s=${width}x${height}`;
-
-    case "zoom-out":
-      // Zoom out then back in effect
-      return `scale=${width}:${height}`;
-
-    case "pan-left":
-      // Pan left: scaled up image moves right to left
-      return `scale=${Math.floor(width * 1.5)}:${height},crop=${width}:${height}:${Math.floor(width * 0.5)}:0`;
-
-    case "pan-right":
-      // Pan right: scaled up image moves left to right
-      return `scale=${Math.floor(width * 1.5)}:${height},crop=${width}:${height}:0:0`;
-
-    case "pan-up":
-      // Pan up: scaled up image moves bottom to top
-      return `scale=${width}:${Math.floor(height * 1.5)},crop=${width}:${height}:0:${Math.floor(height * 0.5)}`;
-
-    case "pan-down":
-      // Pan down: scaled up image moves top to bottom
-      return `scale=${width}:${Math.floor(height * 1.5)},crop=${width}:${height}:0:0`;
-
-    case "fade-in":
-      // Fade in effect
-      return `scale=${width}:${height}`;
-
-    case "fade-out":
-      // Fade out effect
-      return `scale=${width}:${height}`;
-
-    case "rotate-slow":
-      // Subtle rotation effect using zoom movement
-      return `scale=${width}:${height}`;
-
-    case "slide-left":
-      // Slide left effect
-      return `scale=${Math.floor(width * 1.2)}:${height},crop=${width}:${height}:${Math.floor(width * 0.2)}:0`;
-
-    case "tilt-left":
-      // Tilt left - zoom to corner
-      return `scale=${Math.floor(width * 1.3)}:${Math.floor(height * 1.3)},crop=${width}:${height}:${Math.floor(width * 0.3)}:${Math.floor(height * 0.15)}`;
-
-    case "pulse-zoom":
-      // Pulse zoom - strong zoom effect
-      return `zoompan=z=1.5:d=${frames}:x=iw/2-(iw/zoom/2):y=ih/2-(ih/zoom/2):s=${width}x${height}`;
-
-    case "elegant-pan":
-      // Subtle zoom with gentle pan
-      return `scale=${Math.floor(width * 1.15)}:${Math.floor(height * 1.15)},crop=${width}:${height}:${Math.floor(width * 0.075)}:${Math.floor(height * 0.075)}`;
-
-    case "ken-burns":
-    default:
-      // Classic Ken Burns: zoom in with slight pan
-      return `scale=${Math.floor(width * 1.25)}:${Math.floor(height * 1.25)},crop=${width}:${height}:${Math.floor(width * 0.125)}:${Math.floor(height * 0.125)}`;
-  }
-}
-
-async function createVideoFromImage(imagePath: string, outputPath: string, options: {
+async function createVideoFromImage(imagePath: string, outputPath: string, tempDir: string, options: {
   animation: string;
   duration: number;
   width: number;
@@ -110,25 +45,72 @@ async function createVideoFromImage(imagePath: string, outputPath: string, optio
   fps: number;
 }): Promise<void> {
   const {animation, duration, width, height, fps} = options;
+  const totalFrames = Math.ceil(fps * duration);
 
-  // Get animation filter based on selected animation
-  const animationFilter = getAnimationFilter(animation, width, height, duration, fps);
+  // Generate frames with animation effects using ImageMagick
+  const framesDir = path.join(tempDir, "frames");
+  await mkdir(framesDir, {recursive: true});
 
-  // Add fade effects for fade-in and fade-out
-  let finalFilter = animationFilter;
-  if (animation === "fade-in") {
-    finalFilter = `${animationFilter},fade=t=in:st=0:d=0.5`;
-  } else if (animation === "fade-out") {
-    finalFilter = `${animationFilter},fade=t=out:st=${duration - 0.5}:d=0.5`;
+  // Use FFmpeg to create frames at different scales for animation
+  // This is simpler than trying to use expression-based filters
+  let filterChain = "";
+
+  switch (animation) {
+    case "zoom-in":
+      // Zoom gradually from 1.0 to 1.3
+      filterChain = `scale=${Math.floor(width * 1.3)}:${Math.floor(height * 1.3)},crop=${width}:${height}:'(in_w-${width})/2+(in_w-${width})/2*n/${totalFrames-1}':'(in_h-${height})/2+(in_h-${height})/2*n/${totalFrames-1}'`;
+      break;
+    case "zoom-out":
+      filterChain = `scale=${width}:${height}`;
+      break;
+    case "pan-left":
+      // Pan left: start at right, move to left
+      filterChain = `scale=${Math.floor(width * 1.5)}:${height},crop=${width}:${height}:'(iw-${width})*n/${totalFrames-1}':0`;
+      break;
+    case "pan-right":
+      // Pan right: start at left, move to right
+      filterChain = `scale=${Math.floor(width * 1.5)}:${height},crop=${width}:${height}:'(iw-${width})*(1-n/${totalFrames-1})':0`;
+      break;
+    case "pan-up":
+      // Pan up: start at bottom, move to top
+      filterChain = `scale=${width}:${Math.floor(height * 1.5)},crop=${width}:${height}:0:'(ih-${height})*n/${totalFrames-1}'`;
+      break;
+    case "pan-down":
+      // Pan down: start at top, move to bottom
+      filterChain = `scale=${width}:${Math.floor(height * 1.5)},crop=${width}:${height}:0:'(ih-${height})*(1-n/${totalFrames-1})'`;
+      break;
+    case "fade-in":
+      filterChain = `scale=${width}:${height},fade=t=in:st=0:d=0.5`;
+      break;
+    case "fade-out":
+      filterChain = `scale=${width}:${height},fade=t=out:st=${duration - 0.5}:d=0.5`;
+      break;
+    case "slide-left":
+      filterChain = `scale=${Math.floor(width * 1.3)}:${height},crop=${width}:${height}:'(iw-${width})*n/${totalFrames-1}':0`;
+      break;
+    case "tilt-left":
+      filterChain = `scale=${Math.floor(width * 1.3)}:${Math.floor(height * 1.3)},crop=${width}:${height}:'(iw-${width})*n/${totalFrames-1}':'(ih-${height})*0.5'`;
+      break;
+    case "pulse-zoom":
+      filterChain = `scale=${Math.floor(width * 1.5)}:${Math.floor(height * 1.5)},crop=${width}:${height}:'(in_w-${width})/2':'(in_h-${height})/2'`;
+      break;
+    case "elegant-pan":
+      filterChain = `scale=${Math.floor(width * 1.2)}:${Math.floor(height * 1.2)},crop=${width}:${height}:'(iw-${width})*0.25*n/${totalFrames-1}':'(ih-${height})*0.2*n/${totalFrames-1}'`;
+      break;
+    case "ken-burns":
+    default:
+      filterChain = `scale=${Math.floor(width * 1.25)}:${Math.floor(height * 1.25)},crop=${width}:${height}:'(iw-${width})*0.2*n/${totalFrames-1}':'(ih-${height})*0.15*n/${totalFrames-1}'`;
+      break;
   }
 
-  const command = `ffmpeg -loop 1 -i "${imagePath}" -vf "${finalFilter}" -c:v libx264 -crf 23 -t ${duration} -pix_fmt yuv420p -y "${outputPath}"`;
+  // Generate video directly from looped image with filter
+  // Using -vf to apply the animation filter frame by frame
+  const command = `ffmpeg -loop 1 -i "${imagePath}" -vf "${filterChain}" -vframes ${totalFrames} -c:v libx264 -crf 23 -pix_fmt yuv420p -y "${outputPath}" 2>/dev/null`;
 
   try {
     await execAsync(command, {timeout: 120000, maxBuffer: 10 * 1024 * 1024});
   } catch (error) {
-    console.error("FFmpeg command failed:", command);
-    console.error("Error details:", error);
+    console.error("Video generation failed:", command);
     throw new Error("Video encoding failed. Check FFmpeg installation.");
   }
 }
@@ -223,7 +205,7 @@ export async function POST(request: Request) {
 
       // Create video from image
       const videoPath = path.join(tempDir, `video-${i}.mp4`);
-      await createVideoFromImage(imagePath, videoPath, {
+      await createVideoFromImage(imagePath, videoPath, tempDir, {
         animation,
         duration,
         width,

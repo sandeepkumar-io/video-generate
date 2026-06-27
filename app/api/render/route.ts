@@ -21,8 +21,20 @@ async function getBundle() {
 
   bundlePromise = (async () => {
     const {bundle} = await import("@remotion/bundler");
+
+    // Try multiple path resolutions for different environments
+    let entryPoint: string;
+
+    if (process.env.REMOTION_ENTRY_POINT) {
+      entryPoint = process.env.REMOTION_ENTRY_POINT;
+    } else {
+      // For serverless environments, use relative path from project root
+      const projectRoot = process.cwd();
+      entryPoint = path.join(projectRoot, "remotion", "index.ts");
+    }
+
     return bundle({
-      entryPoint: path.join(process.cwd(), "remotion", "index.ts"),
+      entryPoint,
       webpackOverride: (config) => config
     });
   })();

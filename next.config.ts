@@ -1,4 +1,6 @@
 import type {NextConfig} from "next";
+import fs from "fs";
+import path from "path";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -22,6 +24,14 @@ const nextConfig: NextConfig = {
       use: "node-loader"
     });
     return config;
+  },
+  onDemandEntries: {
+    maxInactiveAge: 1000 * 60 * 60,
+    pagesBufferLength: 50
+  },
+  // Ensure remotion folder is available in build
+  async redirects() {
+    return [];
   }
 };
 

@@ -22,16 +22,24 @@ async function getBundle() {
   bundlePromise = (async () => {
     const {bundle} = await import("@remotion/bundler");
 
-    // Try multiple path resolutions for different environments
+    // Determine the correct entry point path based on environment
     let entryPoint: string;
 
     if (process.env.REMOTION_ENTRY_POINT) {
+      // Custom path from environment variable
       entryPoint = process.env.REMOTION_ENTRY_POINT;
+    } else if (process.env.NODE_ENV === "production" && process.env.VERCEL) {
+      // Vercel environment
+      entryPoint = path.join(process.cwd(), "remotion", "index.ts");
+    } else if (process.env.LAMBDA_TASK_ROOT) {
+      // AWS Lambda environment
+      entryPoint = path.join(process.env.LAMBDA_TASK_ROOT, "remotion", "index.ts");
     } else {
-      // For serverless environments, use relative path from project root
-      const projectRoot = process.cwd();
-      entryPoint = path.join(projectRoot, "remotion", "index.ts");
+      // Default: local or other environments
+      entryPoint = path.join(process.cwd(), "remotion", "index.ts");
     }
+
+    console.log("📹 Remotion entry point:", entryPoint);
 
     return bundle({
       entryPoint,

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && npm run copy-remotion",
+    "copy-remotion": "node scripts/copy-remotion.js",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",

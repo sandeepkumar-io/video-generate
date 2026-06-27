@@ -1,6 +1,4 @@
 import type {NextConfig} from "next";
-import fs from "fs";
-import path from "path";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -18,21 +16,26 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: []
   },
-  webpack: (config) => {
+  webpack: (config, {isServer}) => {
+    // Handle .node files
     config.module.rules.push({
       test: /\.node$/,
       use: "node-loader"
     });
+
+    // For server-side code, mark remotion as external to avoid bundling issues
+    if (isServer) {
+      config.externals = config.externals || {};
+      if (typeof config.externals === "object") {
+        config.externals["./remotion"] = "./remotion";
+        config.externals["../remotion"] = "../remotion";
+      }
+    }
+
     return config;
   },
-  onDemandEntries: {
-    maxInactiveAge: 1000 * 60 * 60,
-    pagesBufferLength: 50
-  },
-  // Ensure remotion folder is available in build
-  async redirects() {
-    return [];
-  }
+  // Output configuration for serverless
+  output: process.env.VERCEL ? undefined : "standalone"
 };
 
 export default nextConfig;

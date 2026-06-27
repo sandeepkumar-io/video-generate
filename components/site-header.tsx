@@ -2,10 +2,10 @@ import Link from "next/link";
 import {Clapperboard} from "lucide-react";
 import {ThemeToggle} from "@/components/theme-toggle";
 import {Button} from "@/components/ui/button";
+import {EffectsMenu} from "@/components/effects-menu";
 
 const navItems = [
   {href: "/free-image-to-video", label: "Generator"},
-  {href: "/image-animation-tool", label: "Effects"},
   {href: "/blog", label: "Blog"}
 ];
 
@@ -26,6 +26,7 @@ export function SiteHeader() {
               <Link href={item.href}>{item.label}</Link>
             </Button>
           ))}
+          <EffectsMenu />
         </nav>
         <div className="flex items-center gap-1">
           <Button asChild variant="secondary" className="hidden sm:inline-flex">
